@@ -1,19 +1,23 @@
 /* 
  *  PHYS 3150 final project
- *  Christmas light display
+ *  Christmas tree display and music
  *  Coby Chiu and Zekun Chu
  */
 #include <Servo.h>
 #include "pitches.h"
+#include <LiquidCrystal.h>
 
-int b1 = 2; int b2 = 3; int b3 = 4;
-int servoPin = 5;
+int lcd1,
+int b1 = 2; int b2 = 3;
+int motorPin = 5;
 int ledPin = 9;
 //int latchPin = 9; int clockPin = 10; int dataPin = 11
 int buzzerPin = 12;
 int switchPin = 13;
+bool isOn = false;
 
 Servo servo;
+LiquidCrystal lcd(4, 6, 7, 8, 10, 11,);
 
 int angle = 0;
 
@@ -21,26 +25,39 @@ void setup() {
   /*pinMode(latchPin, OUTPUT);
   pinMode(clockPin, OUTPUT);
   pinMode(dataPin, OUTPUT);*/
+  pinMode(b1, INPUT_PULLUP);
+  pinMode(b2, INPUT_PULLUP);
   pinMode(ledPin, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
-  servo.attach(servoPin);
+  //pinMode(motorPin, OUTPUT);
+  servo.attach(motorPin);
   Serial.begin(9600);
+  lcd.begin(16,2);
+  lcd.print("Merry Christmas!");
 }
 
 void loop() {
   // check switch condition -- nothing happens if switch isn't on
   if (digitalRead(switchPin == HIGH)){
+    mode = true;
+  }
+
+  if (isOn) {
     servoRotate();
     // selecting music
-    if (digitalRead(2) == HIGH){
+    if (digitalRead(b1) == LOW){
+      //analogWrite(motorPin, 50);
+      lcd.print("Playing: 'We Wish You a Merry Christmas'");
       play(1);
-    } else if (digitalRead(3)) == HIGH){
+    } else if (digitalRead(b2)) == LOW){
+      //analogWrite(motorPin, 50);
+      lcd.print("Playing: 'Jingle Bells'");
       play(2);
-    } else if (digitalRead(4) == HIGH) {
-      play(3);
     }
+  } else {
+    //analogWrite(motorPin, 0);
+    buzz(buzzerPin, 0, 1000);
   }
-  // check if we need a stop function
 }
 
 // function to rotate servo motor back and forth 180 degrees
@@ -48,33 +65,15 @@ void servoRotate() {
   // scan from 0 to 180 degrees
   for(angle = 0; angle < 180; angle++){                                  
     servo.write(angle);               
-    delay(15);                   
+    delay(30); //change this to change speed?               
   } 
   // now scan back from 180 to 0 degrees
   for(angle = 180; angle > 0; angle--){                                
     servo.write(angle);           
-    delay(15);       
+    delay(30);       
   } 
 }
 
-// function to light up the LEDs
-/*void leds() {
-  leds = 0;
-  updateShiftRegister();
-  delay(500);
-  for (int i = 0; i < 8; i++) {
-    bitSet(leds, i);
-    updateShiftRegister();
-    delay(500);
-  }
-}
-
-void updateShiftRegister()
-{
-  digitalWrite(latchPin, LOW);
-  shiftOut(dataPin, clockPin, LSBFIRST, leds);
-  digitalWrite(latchPin, HIGH);
-}*/
 
 /******************* code to play music *********************/
 
@@ -150,7 +149,7 @@ void play(int song){
     int size = sizeof(jingle_melody) / sizeof(int);
     for (int thisNote = 0; thisNote < size; thisNote++) {
 
-      int noteDuration = 1000 / wish_tempo[thisNote];
+      int noteDuration = 1000 / jingle_tempo[thisNote];
 
       buzz(buzzerPin, jingle_melody[thisNote], noteDuration);
 
@@ -160,9 +159,7 @@ void play(int song){
       // stop the tone playing:
       buzz(buzzerPin, 0, noteDuration);
     }
-  } else if (song == 3) {
-    // something else
-  }
+  } 
 }
 
 void buzz(int targetPin, long frequency, long length) {
